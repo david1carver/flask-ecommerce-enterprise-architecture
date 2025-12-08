@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise Flask E-Commerce Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #06080d;
+      --bg-secondary: rgba(255, 255, 255, 0.02);
+      --border: rgba(255, 255, 255, 0.06);
+      --text-primary: #e4e4e7;
+      --text-muted: #71717a;
+      
+      --client: #3b82f6;
+      --edge: #ec4899;
+      --security: #ef4444;
+      --app: #8b5cf6;
+      --service: #14b8a6;
+      --data: #eab308;
+      --async: #f97316;
+      --external: #64748b;
+      --infra: #06b6d4;
+      --ai: #a855f7;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 32px;
+      background-image: 
+        radial-gradient(ellipse at 10% 10%, rgba(59, 130, 246, 0.06) 0%, transparent 40%),
+        radial-gradient(ellipse at 90% 20%, rgba(168, 85, 247, 0.06) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 90%, rgba(6, 182, 212, 0.06) 0%, transparent 40%);
+    }
+
+    .container {
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa, #14b8a6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .subtitle span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--text-muted);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    .architecture {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .layer {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .layer-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .layer-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .layer-goal {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .layer-content {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .node-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      min-width: 180px;
+    }
+
+    .node-group-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .node {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 10px 14px;
+      position: relative;
+      transition: all 0.2s ease;
+      cursor: default;
+    }
+
+    .node:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .node-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .node-icon {
+      font-size: 1rem;
+    }
+
+    .node-title {
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .node-desc {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .node-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      font-size: 0.55rem;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-weight: 600;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .node-badge.new { background: #22c55e; color: white; }
+    .node-badge.enhanced { background: #3b82f6; color: white; }
+    .node-badge.critical { background: #ef4444; color: white; }
+
+    /* Layer colors */
+    .layer.client .layer-label { color: var(--client); border: 1px solid rgba(59, 130, 246, 0.3); }
+    .layer.client .node { border-left: 2px solid var(--client); }
+
+    .layer.edge .layer-label { color: var(--edge); border: 1px solid rgba(236, 72, 153, 0.3); }
+    .layer.edge .node { border-left: 2px solid var(--edge); }
+
+    .layer.security .layer-label { color: var(--security); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .layer.security .node { border-left: 2px solid var(--security); }
+
+    .layer.app .layer-label { color: var(--app); border: 1px solid rgba(139, 92, 246, 0.3); }
+    .layer.app .node { border-left: 2px solid var(--app); }
+
+    .layer.service .layer-label { color: var(--service); border: 1px solid rgba(20, 184, 166, 0.3); }
+    .layer.service .node { border-left: 2px solid var(--service); }
+
+    .layer.data .layer-label { color: var(--data); border: 1px solid rgba(234, 179, 8, 0.3); }
+    .layer.data .node { border-left: 2px solid var(--data); }
+
+    .layer.async .layer-label { color: var(--async); border: 1px solid rgba(249, 115, 22, 0.3); }
+    .layer.async .node { border-left: 2px solid var(--async); }
+
+    .layer.external .layer-label { color: var(--external); border: 1px solid rgba(100, 116, 139, 0.3); }
+    .layer.external .node { border-left: 2px solid var(--external); }
+
+    .layer.infra .layer-label { color: var(--infra); border: 1px solid rgba(6, 182, 212, 0.3); }
+    .layer.infra .node { border-left: 2px solid var(--infra); }
+
+    .layer.ai .layer-label { color: var(--ai); border: 1px solid rgba(168, 85, 247, 0.3); }
+    .layer.ai .node { border-left: 2px solid var(--ai); }
+
+    /* Flows Section */
+    .flows-section {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 16px;
+    }
+
+    .flow-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .flow-card h3 {
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .flow-steps {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .flow-steps .arrow {
+      color: var(--client);
+      margin: 0 3px;
+    }
+
+    /* DDD Structure */
+    .ddd-section {
+      margin-top: 40px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .ddd-section h2 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      color: var(--app);
+    }
+
+    .ddd-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .ddd-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .ddd-card h4 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--app);
+      margin-bottom: 8px;
+    }
+
+    .ddd-card ul {
+      list-style: none;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .ddd-card li {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+
+    .ddd-card li:last-child {
+      border-bottom: none;
+    }
+
+    .ddd-card code {
+      font-family: 'IBM Plex Mono', monospace;
+      background: rgba(139, 92, 246, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+    }
+
+    /* Summary Cards */
+    .summary-section {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .summary-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 16px;
+      border-left: 3px solid;
+    }
+
+    .summary-card h3 {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-card p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .summary-card.client { border-color: var(--client); }
+    .summary-card.client h3 { color: var(--client); }
+    
+    .summary-card.security { border-color: var(--security); }
+    .summary-card.security h3 { color: var(--security); }
+    
+    .summary-card.app { border-color: var(--app); }
+    .summary-card.app h3 { color: var(--app); }
+    
+    .summary-card.data { border-color: var(--data); }
+    .summary-card.data h3 { color: var(--data); }
+    
+    .summary-card.async { border-color: var(--async); }
+    .summary-card.async h3 { color: var(--async); }
+    
+    .summary-card.infra { border-color: var(--infra); }
+    .summary-card.infra h3 { color: var(--infra); }
+    
+    .summary-card.ai { border-color: var(--ai); }
+    .summary-card.ai h3 { color: var(--ai); }
+
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      h1 { font-size: 1.5rem; }
+      .node-group { min-width: 100%; }
+      .flows-section { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Enterprise Flask E-Commerce Architecture</h1>
+      <div class="subtitle">
+        <span>🏗️ Domain-Driven Design</span>
+        <span>🛡️ Zero-Trust Security</span>
+        <span>☸️ Cloud-Native</span>
+        <span>🤖 AI-Enhanced</span>
+      </div>
+    </header>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background: var(--client);"></div>Client</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--edge);"></div>Edge</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--security);"></div>Security</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--app);"></div>Application</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--service);"></div>Services</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--data);"></div>Data</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--async);"></div>Async</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--infra);"></div>Infrastructure</div>
+      <div class="legend-item"><div class="legend-dot" style="background: var(--ai);"></div>AI/ML</div>
+    </div>
+
+    <div class="architecture">
+      
+      <!-- Client Layer -->
+      <div class="layer client">
+        <div class="layer-header">
+          <span class="layer-label">Client & API Layer</span>
+          <span class="layer-goal">UX, extensibility, flexible API integration</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Web Clients</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">⚛️</span>
+                <span class="node-title">Next.js / Vue SPA</span>
+              </div>
+              <div class="node-desc">Modern reactive frontend</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📲</span>
+                <span class="node-title">PWA Support</span>
+              </div>
+              <div class="node-desc">Offline + caching</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">👨‍💼</span>
+                <span class="node-title">Admin Dashboard</span>
+              </div>
+              <div class="node-desc">Staff portal</div>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">API Gateway</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🍓</span>
+                <span class="node-title">GraphQL Gateway</span>
+              </div>
+              <div class="node-desc">Strawberry / Ariadne</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📡</span>
+                <span class="node-title">REST API</span>
+              </div>
+              <div class="node-desc">Flask-RESTful</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔌</span>
+                <span class="node-title">WebSocket</span>
+              </div>
+              <div class="node-desc">Flask-SocketIO</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">External Access</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📱</span>
+                <span class="node-title">Mobile Apps</span>
+              </div>
+              <div class="node-desc">iOS / Android</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🤝</span>
+                <span class="node-title">Partner API</span>
+              </div>
+              <div class="node-desc">Rate-limited tokens</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edge Layer -->
+      <div class="layer edge">
+        <div class="layer-header">
+          <span class="layer-label">Edge / CDN</span>
+          <span class="layer-goal">Global distribution, DDoS protection, SSL</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Content Delivery</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">☁️</span>
+                <span class="node-title">CloudFlare CDN</span>
+              </div>
+              <div class="node-desc">Static assets + WAF</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🖼️</span>
+                <span class="node-title">Image CDN</span>
+              </div>
+              <div class="node-desc">Cloudinary / imgix</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Traffic Management</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">⚖️</span>
+                <span class="node-title">Load Balancer</span>
+              </div>
+              <div class="node-desc">nginx / Traefik</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔒</span>
+                <span class="node-title">SSL/TLS</span>
+              </div>
+              <div class="node-desc">Let's Encrypt + TLS 1.3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security Layer -->
+      <div class="layer security">
+        <div class="layer-header">
+          <span class="layer-label">Security Layer</span>
+          <span class="layer-goal">Zero-trust posture, enterprise-grade protection</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Authentication</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔐</span>
+                <span class="node-title">JWT + Refresh</span>
+              </div>
+              <div class="node-desc">Short-lived + rotation</div>
+              <span class="node-badge enhanced">ENH</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🎫</span>
+                <span class="node-title">OAuth2 / OIDC</span>
+              </div>
+              <div class="node-desc">Social + SSO</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📱</span>
+                <span class="node-title">MFA / 2FA</span>
+              </div>
+              <div class="node-desc">Twilio Verify / TOTP</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Authorization</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">👥</span>
+                <span class="node-title">RBAC</span>
+              </div>
+              <div class="node-desc">Flask-Principal</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔑</span>
+                <span class="node-title">API Key Rotation</span>
+              </div>
+              <div class="node-desc">Auto-expiry + audit</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Protection</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🛡️</span>
+                <span class="node-title">Flask-Talisman</span>
+              </div>
+              <div class="node-desc">CSP, HSTS, X-Frame</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🚦</span>
+                <span class="node-title">Rate Limiter</span>
+              </div>
+              <div class="node-desc">Flask-Limiter + Redis</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🚫</span>
+                <span class="node-title">CSRF + Validation</span>
+              </div>
+              <div class="node-desc">WTF + Marshmallow</div>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Audit</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📋</span>
+                <span class="node-title">Audit Logging</span>
+              </div>
+              <div class="node-desc">Admin action trails</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Application Layer -->
+      <div class="layer app">
+        <div class="layer-header">
+          <span class="layer-label">Application Layer</span>
+          <span class="layer-goal">DDD structure, modular maintainability, testability</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Core</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🧠</span>
+                <span class="node-title">Flask App</span>
+              </div>
+              <div class="node-desc">Gunicorn + gevent</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">💉</span>
+                <span class="node-title">Flask-Injector</span>
+              </div>
+              <div class="node-desc">Dependency injection</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Presentation</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🌐</span>
+                <span class="node-title">Blueprints</span>
+              </div>
+              <div class="node-desc">Modular routes</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🧩</span>
+                <span class="node-title">Jinja2</span>
+              </div>
+              <div class="node-desc">SSR templates</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📋</span>
+                <span class="node-title">Schemas</span>
+              </div>
+              <div class="node-desc">Marshmallow DTOs</div>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Domain</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🏛️</span>
+                <span class="node-title">Domain Models</span>
+              </div>
+              <div class="node-desc">Business entities</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">⚙️</span>
+                <span class="node-title">Domain Services</span>
+              </div>
+              <div class="node-desc">Business logic</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Infrastructure</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🗃️</span>
+                <span class="node-title">Repositories</span>
+              </div>
+              <div class="node-desc">Data access layer</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔧</span>
+                <span class="node-title">Adapters</span>
+              </div>
+              <div class="node-desc">External integrations</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Business Services -->
+      <div class="layer service">
+        <div class="layer-header">
+          <span class="layer-label">Business Services</span>
+          <span class="layer-goal">Bounded contexts, service isolation</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Core Commerce</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🛒</span>
+                <span class="node-title">cart_service</span>
+              </div>
+              <div class="node-desc">Session + Redis TTL</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📃</span>
+                <span class="node-title">order_service</span>
+              </div>
+              <div class="node-desc">Order lifecycle</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📦</span>
+                <span class="node-title">inventory_service</span>
+              </div>
+              <div class="node-desc">Stock management</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">💰</span>
+                <span class="node-title">pricing_service</span>
+              </div>
+              <div class="node-desc">Discounts, tax</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">User & Auth</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">👤</span>
+                <span class="node-title">auth_service</span>
+              </div>
+              <div class="node-desc">Login, register, MFA</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🪪</span>
+                <span class="node-title">user_service</span>
+              </div>
+              <div class="node-desc">Profile, preferences</div>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Discovery</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔍</span>
+                <span class="node-title">search_service</span>
+              </div>
+              <div class="node-desc">Elasticsearch</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📊</span>
+                <span class="node-title">analytics_service</span>
+              </div>
+              <div class="node-desc">Events, metrics</div>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Communication</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📧</span>
+                <span class="node-title">notification_service</span>
+              </div>
+              <div class="node-desc">Email, SMS, push</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📍</span>
+                <span class="node-title">tracking_service</span>
+              </div>
+              <div class="node-desc">Real-time via WS</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Layer -->
+      <div class="layer data">
+        <div class="layer-header">
+          <span class="layer-label">Data Layer</span>
+          <span class="layer-goal">Speed, integrity, fault tolerance</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Primary Storage</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🐘</span>
+                <span class="node-title">PostgreSQL</span>
+              </div>
+              <div class="node-desc">Primary + read replicas</div>
+              <span class="node-badge enhanced">ENH</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔄</span>
+                <span class="node-title">Alembic</span>
+              </div>
+              <div class="node-desc">Migrations</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🏊</span>
+                <span class="node-title">pgBouncer</span>
+              </div>
+              <div class="node-desc">Connection pooling</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Caching & Sessions</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">⚡</span>
+                <span class="node-title">Redis Cluster</span>
+              </div>
+              <div class="node-desc">Cache + sessions</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🌊</span>
+                <span class="node-title">Redis Streams</span>
+              </div>
+              <div class="node-desc">Event log / CDC</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Search & Analytics</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔎</span>
+                <span class="node-title">Elasticsearch</span>
+              </div>
+              <div class="node-desc">Product index</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📈</span>
+                <span class="node-title">Data Warehouse</span>
+              </div>
+              <div class="node-desc">BigQuery / Snowflake</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Object Storage</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📁</span>
+                <span class="node-title">S3 / GCS</span>
+              </div>
+              <div class="node-desc">Images, assets</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Async Layer -->
+      <div class="layer async">
+        <div class="layer-header">
+          <span class="layer-label">Async & Workers</span>
+          <span class="layer-goal">Reliability, observability, event-driven</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Task Queue</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🥬</span>
+                <span class="node-title">Celery Workers</span>
+              </div>
+              <div class="node-desc">Distributed tasks</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🌸</span>
+                <span class="node-title">Flower</span>
+              </div>
+              <div class="node-desc">Task monitoring UI</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔁</span>
+                <span class="node-title">Retry + Backoff</span>
+              </div>
+              <div class="node-desc">Exponential + DLQ</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Message Streaming</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🐰</span>
+                <span class="node-title">RabbitMQ</span>
+              </div>
+              <div class="node-desc">Message broker</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📬</span>
+                <span class="node-title">Kafka</span>
+              </div>
+              <div class="node-desc">Event streaming</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Task Types</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📧</span>
+                <span class="node-title">Email Tasks</span>
+              </div>
+              <div class="node-desc">Transactional</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔔</span>
+                <span class="node-title">Webhooks</span>
+              </div>
+              <div class="node-desc">Payment callbacks</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔄</span>
+                <span class="node-title">Sync Jobs</span>
+              </div>
+              <div class="node-desc">Inventory, search</div>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Tracing</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔭</span>
+                <span class="node-title">OpenTelemetry</span>
+              </div>
+              <div class="node-desc">Distributed traces</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Infrastructure Layer -->
+      <div class="layer infra">
+        <div class="layer-header">
+          <span class="layer-label">Infrastructure & DevOps</span>
+          <span class="layer-goal">Scalable, observable, cloud-native</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Orchestration</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🐳</span>
+                <span class="node-title">Docker</span>
+              </div>
+              <div class="node-desc">Containerization</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">☸️</span>
+                <span class="node-title">Kubernetes</span>
+              </div>
+              <div class="node-desc">Helm charts</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔄</span>
+                <span class="node-title">Blue-Green</span>
+              </div>
+              <div class="node-desc">Zero-downtime deploy</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">CI/CD</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔧</span>
+                <span class="node-title">GitHub Actions</span>
+              </div>
+              <div class="node-desc">Build, test, deploy</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🏗️</span>
+                <span class="node-title">ArgoCD</span>
+              </div>
+              <div class="node-desc">GitOps</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Observability</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📊</span>
+                <span class="node-title">Prometheus</span>
+              </div>
+              <div class="node-desc">Metrics collection</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📈</span>
+                <span class="node-title">Grafana</span>
+              </div>
+              <div class="node-desc">Dashboards</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📝</span>
+                <span class="node-title">Loki</span>
+              </div>
+              <div class="node-desc">Log aggregation</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🚨</span>
+                <span class="node-title">Sentry</span>
+              </div>
+              <div class="node-desc">Error tracking</div>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Secrets</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🔐</span>
+                <span class="node-title">HashiCorp Vault</span>
+              </div>
+              <div class="node-desc">Secrets management</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Layer -->
+      <div class="layer ai">
+        <div class="layer-header">
+          <span class="layer-label">AI & Personalization</span>
+          <span class="layer-goal">Customer engagement, smart discovery</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Recommendations</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🎯</span>
+                <span class="node-title">Rec Engine</span>
+              </div>
+              <div class="node-desc">scikit-learn / TF Lite</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">👀</span>
+                <span class="node-title">Collaborative Filter</span>
+              </div>
+              <div class="node-desc">User-item matrix</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Smart Search</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🧠</span>
+                <span class="node-title">Semantic Search</span>
+              </div>
+              <div class="node-desc">BM25 + embeddings</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">✨</span>
+                <span class="node-title">Query Expansion</span>
+              </div>
+              <div class="node-desc">Synonyms, typos</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Conversational</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🤖</span>
+                <span class="node-title">Support Chatbot</span>
+              </div>
+              <div class="node-desc">Rasa / Claude API</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">💬</span>
+                <span class="node-title">Order Assistant</span>
+              </div>
+              <div class="node-desc">Status, returns</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- External Services -->
+      <div class="layer external">
+        <div class="layer-header">
+          <span class="layer-label">External Services</span>
+          <span class="layer-goal">Third-party integrations</span>
+        </div>
+        <div class="layer-content">
+          <div class="node-group">
+            <div class="node-group-title">Payments</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">💳</span>
+                <span class="node-title">Stripe</span>
+              </div>
+              <div class="node-desc">Cards, Apple Pay</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🅿️</span>
+                <span class="node-title">PayPal</span>
+              </div>
+              <div class="node-desc">Alternative payment</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Communications</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📬</span>
+                <span class="node-title">SendGrid</span>
+              </div>
+              <div class="node-desc">Transactional email</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📱</span>
+                <span class="node-title">Twilio</span>
+              </div>
+              <div class="node-desc">SMS + Verify</div>
+            </div>
+          </div>
+          <div class="node-group">
+            <div class="node-group-title">Logistics</div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">🚚</span>
+                <span class="node-title">Shipping APIs</span>
+              </div>
+              <div class="node-desc">AusPost, Sendle</div>
+            </div>
+            <div class="node">
+              <div class="node-header">
+                <span class="node-icon">📍</span>
+                <span class="node-title">Address Verify</span>
+              </div>
+              <div class="node-desc">Google Maps API</div>
+              <span class="node-badge new">NEW</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Flows -->
+    <div class="flows-section">
+      <div class="flow-card">
+        <h3>🛒 Checkout Flow (Enhanced)</h3>
+        <div class="flow-steps">
+          SPA <span class="arrow">→</span> GraphQL <span class="arrow">→</span> JWT + MFA <span class="arrow">→</span> RBAC Check <span class="arrow">→</span> cart_service <span class="arrow">→</span> pricing_service <span class="arrow">→</span> order_service <span class="arrow">→</span> Kafka Event <span class="arrow">→</span> Stripe <span class="arrow">→</span> Webhook <span class="arrow">→</span> Celery <span class="arrow">→</span> notification_service <span class="arrow">→</span> WebSocket Update
+        </div>
+      </div>
+      <div class="flow-card">
+        <h3>🔍 AI-Powered Search</h3>
+        <div class="flow-steps">
+          Query <span class="arrow">→</span> GraphQL <span class="arrow">→</span> search_service <span class="arrow">→</span> Query Expansion <span class="arrow">→</span> Elasticsearch BM25 <span class="arrow">→</span> Embedding Rerank <span class="arrow">→</span> Rec Engine Boost <span class="arrow">→</span> Redis Cache <span class="arrow">→</span> Response
+        </div>
+      </div>
+      <div class="flow-card">
+        <h3>👤 Auth Flow (Zero-Trust)</h3>
+        <div class="flow-steps">
+          Login <span class="arrow">→</span> Rate Limit <span class="arrow">→</span> CSRF <span class="arrow">→</span> auth_service <span class="arrow">→</span> PostgreSQL <span class="arrow">→</span> MFA Challenge <span class="arrow">→</span> Twilio Verify <span class="arrow">→</span> JWT (15min) + Refresh (7d) <span class="arrow">→</span> Redis Session <span class="arrow">→</span> Audit Log
+        </div>
+      </div>
+      <div class="flow-card">
+        <h3>📦 Inventory Sync</h3>
+        <div class="flow-steps">
+          Admin Update <span class="arrow">→</span> inventory_service <span class="arrow">→</span> PostgreSQL <span class="arrow">→</span> Redis Streams CDC <span class="arrow">→</span> Kafka <span class="arrow">→</span> Celery <span class="arrow">→</span> Elasticsearch Reindex <span class="arrow">→</span> BigQuery ETL <span class="arrow">→</span> OpenTelemetry Trace
+        </div>
+      </div>
+      <div class="flow-card">
+        <h3>📍 Real-Time Tracking</h3>
+        <div class="flow-steps">
+          Shipping Webhook <span class="arrow">→</span> tracking_service <span class="arrow">→</span> Redis Pub/Sub <span class="arrow">→</span> Flask-SocketIO <span class="arrow">→</span> WebSocket Push <span class="arrow">→</span> PWA Notification
+        </div>
+      </div>
+      <div class="flow-card">
+        <h3>🤖 Chatbot Support</h3>
+        <div class="flow-steps">
+          User Query <span class="arrow">→</span> WebSocket <span class="arrow">→</span> Chatbot Service <span class="arrow">→</span> Intent Classification <span class="arrow">→</span> order_service (if order query) <span class="arrow">→</span> Claude API (complex) <span class="arrow">→</span> Response <span class="arrow">→</span> Analytics Event
+        </div>
+      </div>
+    </div>
+
+    <!-- DDD Structure -->
+    <div class="ddd-section">
+      <h2>🏗️ Domain-Driven Design Structure</h2>
+      <div class="ddd-grid">
+        <div class="ddd-card">
+          <h4>/domain</h4>
+          <ul>
+            <li><code>entities/</code> - User, Product, Order, Cart</li>
+            <li><code>value_objects/</code> - Money, Address, Email</li>
+            <li><code>services/</code> - PricingService, InventoryService</li>
+            <li><code>events/</code> - OrderPlaced, PaymentReceived</li>
+            <li><code>exceptions/</code> - InsufficientStock, InvalidPayment</li>
+          </ul>
+        </div>
+        <div class="ddd-card">
+          <h4>/infrastructure</h4>
+          <ul>
+            <li><code>persistence/</code> - SQLAlchemy repos, Alembic</li>
+            <li><code>cache/</code> - Redis client, decorators</li>
+            <li><code>messaging/</code> - Kafka producer, Celery tasks</li>
+            <li><code>external/</code> - Stripe, SendGrid adapters</li>
+            <li><code>search/</code> - Elasticsearch client</li>
+          </ul>
+        </div>
+        <div class="ddd-card">
+          <h4>/presentation</h4>
+          <ul>
+            <li><code>api/</code> - REST blueprints, GraphQL resolvers</li>
+            <li><code>schemas/</code> - Marshmallow request/response</li>
+            <li><code>websocket/</code> - SocketIO handlers</li>
+            <li><code>templates/</code> - Jinja2 (SSR fallback)</li>
+            <li><code>middleware/</code> - Auth, CORS, logging</li>
+          </ul>
+        </div>
+        <div class="ddd-card">
+          <h4>/application</h4>
+          <ul>
+            <li><code>commands/</code> - PlaceOrder, UpdateCart</li>
+            <li><code>queries/</code> - GetOrderHistory, SearchProducts</li>
+            <li><code>handlers/</code> - Command/query handlers</li>
+            <li><code>dto/</code> - Data transfer objects</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-section">
+      <div class="summary-card client">
+        <h3>🖥️ Client & API</h3>
+        <p>GraphQL gateway via Strawberry for flexible queries. Next.js/Vue SPA with PWA offline support. WebSocket real-time updates. Rate-limited partner API tokens.</p>
+      </div>
+      <div class="summary-card security">
+        <h3>🛡️ Zero-Trust Security</h3>
+        <p>Flask-Talisman headers. MFA via Twilio Verify. RBAC with Flask-Principal. JWT rotation (15min access + 7d refresh). API key auto-expiry. Full audit logging.</p>
+      </div>
+      <div class="summary-card app">
+        <h3>🏛️ DDD Architecture</h3>
+        <p>Clean separation: domain, infrastructure, presentation. Flask-Injector for DI. Repository pattern. Event-driven with domain events. CQRS-lite approach.</p>
+      </div>
+      <div class="summary-card data">
+        <h3>🗃️ Data Layer</h3>
+        <p>PostgreSQL + pgBouncer pooling + read replicas. Redis Streams for CDC. Alembic migrations. BigQuery/Snowflake warehouse. Cache abstraction with TTL control.</p>
+      </div>
+      <div class="summary-card async">
+        <h3>⚡ Async Workers</h3>
+        <p>Celery + Flower monitoring. Exponential backoff + DLQ. Kafka/RabbitMQ for event streaming. OpenTelemetry distributed tracing across all async tasks.</p>
+      </div>
+      <div class="summary-card infra">
+        <h3>☸️ Cloud-Native Infra</h3>
+        <p>Docker + Kubernetes (Helm). GitHub Actions CI/CD + ArgoCD GitOps. Prometheus/Grafana/Loki observability stack. HashiCorp Vault secrets. Blue-green deploys.</p>
+      </div>
+      <div class="summary-card ai">
+        <h3>🤖 AI Personalization</h3>
+        <p>Recommendation engine (collaborative filtering). Semantic search with BM25 + embeddings. Support chatbot via Rasa or Claude API. Query expansion for typo tolerance.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
